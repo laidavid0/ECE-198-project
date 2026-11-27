@@ -137,6 +137,60 @@ void showStartup(uint8_t secondsRemaining) {
   display.println(F("s"));
   display.display();
 }
+//counting repetition, and keep trakc of cycle repetition and elapsed time
+int counting_rep(double distanceCm){
+  cycle_completed = false;
+  if (!state && distanceCm <= near_thershold){
+    state=true;
+    //we only record the start time when each repetition start
+    start_time = millis();
+  }else if (state && distanceCm >=return_thershold) {
+    rep_count++;
+    state = false;
+    cycle_completed = true;
+  }
+  return rep_count;
+}
+//update maximum and minimum distance for each complete cycle and calculate movement range
+double movement_range(double distanceCm){
+  if (distanceCm < 0){
+    return range;
+  }
+  if (state || cycle_completed){
+    if(!has_measurement) {
+      minimum = distanceCm;
+      maximum = distanceCm;
+      has_measurement = true;
+    }
+    if (distanceCm < minimum) {
+      minimum = distanceCm;
+    }
+    if (distanceCm > maximum) {
+      maximum = distanceCm;
+    }
+  }
+  if (cycle_completed && has_measurement) {
+    range = maximum - minimum;
+    has_measurement = false;
+  }
+  return range;
+}
+//first compute signed velocity, and then use absoulte functiont to get speed
+double velocity(double filter_distance){
+  if (filter_distance < 0){
+    return 0.0
+  }
+  unsigend long current_time = millis();
+  if (!has_previous) {
+    previous_distance = filter_distance;
+    previous_time = current_time;
+    has_previous = ture;
+    return 0.0;
+  }
+  double displacement = filter_distance - previous distance;
+  double time = current_time - previous_time;
+  double speed= abs(displacement / time;
+  return speed;
 
 void showProfileSelect() {
   display.clearDisplay();
@@ -371,6 +425,11 @@ void setup() {
   showStartup(5);
 }
 
+void setup() {
+ Serial.begin(115200);
+ pinMode(trigPin, OUTPUT);
+ pinMode(echoPin, INPUT);
+}
 void loop() {
   const unsigned long now = millis();
   const ButtonEvents left = updateButton(leftButton, now);
